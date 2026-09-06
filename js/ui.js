@@ -28,11 +28,13 @@ function cacheElements() {
   el.formTitle = document.getElementById('form-title');
   el.fObjectName = document.getElementById('f-objectName');
   el.fControlType = document.getElementById('f-controlType');
+  el.fJointNumber = document.getElementById('f-jointNumber');
+  el.fDiameter = document.getElementById('f-diameter');
+  el.fThickness = document.getElementById('f-thickness');
+  el.fSteelGrade = document.getElementById('f-steelGrade');
+  el.fWelderId = document.getElementById('f-welderId');
   el.fDescription = document.getElementById('f-description');
   el.fContactPerson = document.getElementById('f-contactPerson');
-  el.fStatus = document.getElementById('f-status');
-  el.fCreatedAt = document.getElementById('f-createdAt');
-  el.fAuthor = document.getElementById('f-author');
   el.btnSubmit = document.getElementById('btn-submit');
   el.btnCancelEdit = document.getElementById('btn-cancel-edit');
 
@@ -46,6 +48,11 @@ function cacheElements() {
   el.confirmText = document.getElementById('confirm-text');
   el.btnConfirmDelete = document.getElementById('btn-confirm-delete');
   el.btnCancelDelete = document.getElementById('btn-cancel-delete');
+
+  el.modalReject = document.getElementById('modal-reject');
+  el.inputDefectReason = document.getElementById('input-defect-reason');
+  el.btnConfirmReject = document.getElementById('btn-confirm-reject');
+  el.btnCancelReject = document.getElementById('btn-cancel-reject');
 
   el.toastContainer = document.getElementById('toast-container');
   el.mapHint = document.getElementById('map-hint');
@@ -82,33 +89,51 @@ function typeIconClass(type) {
 
 /** Строит HTML одной карточки заявки (ВМЕСТО ХЕША — ОПИСАНИЕ) */
 function buildCardHtml(request, isActive) {
-  const statusClass = 'st-' + request.status.toLowerCase().replace(/\s+/g, '-');
-  const isApproved = request.approved === true;
-  const isRejected = request.approved === false;
-  
+  let statusClass = 'st-new';
+  if (request.status === 'В работе') statusClass = 'st-work';
+  else if (request.status === 'Завершена') statusClass = 'st-done';
+
   let verdictHtml = '';
-  if (isApproved) {
+  if (request.approved === true) {
     verdictHtml = `<span class="verdict approved"><i class="fa-solid fa-check"></i> ГОДЕН</span>`;
-  } else if (isRejected) {
+  } else if (request.approved === false) {
     verdictHtml = `<span class="verdict rejected"><i class="fa-solid fa-xmark"></i> НЕ ГОДЕН</span>`;
   }
+  
+  let defectReasonHtml = '';
+  if (request.approved === false && request.defectReason) {
+    defectReasonHtml = `<div class="rc-defect"><i class="fa-solid fa-triangle-exclamation"></i> Дефект: ${escapeHtml(request.defectReason)}</div>`;
+  }
 
-  // Описание и контакт
-  const description = request.description || '';
-  const contactPerson = request.contactPerson || '';
+  const descHtml = request.description ? `<div class="rc-desc"><i class="fa-solid fa-align-left"></i> ${escapeHtml(request.description)}</div>` : '';
+  const contactHtml = request.contactPerson ? `<div class="rc-contact"><i class="fa-solid fa-id-card"></i> ${escapeHtml(request.contactPerson)}</div>` : '';
+  
+  // Новые поля
+  const jointHtml = request.jointNumber ? `Стык: <b>${escapeHtml(request.jointNumber)}</b>` : '';
+  const dimsHtml = (request.diameter || request.thickness) ? `Размер: <b>Ø${escapeHtml(request.diameter || '-')}x${escapeHtml(request.thickness || '-')}</b>` : '';
+  const welderHtml = request.welderId ? `Клеймо: <b>${escapeHtml(request.welderId)}</b>` : '';
+  
+  let specInfoHtml = '';
+  if (jointHtml || dimsHtml || welderHtml) {
+    specInfoHtml = `<div class="rc-spec-info">
+      ${jointHtml ? `<span>${jointHtml}</span>` : ''}
+      ${dimsHtml ? `<span>${dimsHtml}</span>` : ''}
+      ${welderHtml ? `<span>${welderHtml}</span>` : ''}
+    </div>`;
+  }
 
   return `
-    <div class="request-card type-${escapeHtml(request.controlType)} ${isActive ? 'active' : ''} ${isApproved ? 'approved' : ''} ${isRejected ? 'rejected' : ''}" data-id="${request.id}">
-      <div class="rc-top">
-        <div>
-          <p class="rc-title">${escapeHtml(request.objectName)}</p>
-          ${description ? `<p class="rc-desc">📝 ${escapeHtml(description)}</p>` : ''}
-          ${contactPerson ? `<p class="rc-contact">👤 ${escapeHtml(contactPerson)}</p>` : ''}
-        </div>
-        <button class="rc-del" data-id="${request.id}" title="Удалить заявку" type="button">
+    <div class="request-card type-${escapeHtml(request.controlType)} ${isActive ? 'active' : ''} ${request.approved === true ? 'approved' : ''} ${request.approved === false ? 'rejected' : ''}" data-id="${request.id}">
+      <div class="rc-header">
+        <h3 class="rc-title">${escapeHtml(request.objectName)}</h3>
+        <button class="rc-del" data-id="${request.id}" title="Удалить заявку">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
+      ${specInfoHtml}
+      ${descHtml}
+      ${contactHtml}
+      ${defectReasonHtml}
       <div class="rc-meta">
         <span class="rc-type-badge type-${escapeHtml(request.controlType)}">
           <i class="fa-solid ${typeIconClass(request.controlType)}"></i> ${escapeHtml(request.controlType)}
@@ -162,13 +187,14 @@ function renderList(requests, filters, activeId) {
   return filtered;
 }
 
-/** Обновляет счётчики заявок в шапке и левой панели */
+/** Обновляет счетчики заявок в боксе фильтров (только активные/в работе/брак) */
 function updateCounters(requests) {
-  if (el.statTotal) el.statTotal.textContent = requests.length;
-  if (el.cntVik) el.cntVik.textContent = requests.filter((r) => r.controlType === 'Вик').length;
-  if (el.cntUzk) el.cntUzk.textContent = requests.filter((r) => r.controlType === 'Узк').length;
-  if (el.cntRk) el.cntRk.textContent = requests.filter((r) => r.controlType === 'Рк').length;
-  if (el.cntCd) el.cntCd.textContent = requests.filter((r) => r.controlType === 'Цд').length;
+  const activeRequests = requests.filter(r => r.approved !== true);
+  if (el.statTotal) el.statTotal.textContent = activeRequests.length;
+  if (el.cntVik) el.cntVik.textContent = activeRequests.filter((r) => r.controlType === 'Вик').length;
+  if (el.cntUzk) el.cntUzk.textContent = activeRequests.filter((r) => r.controlType === 'Узк').length;
+  if (el.cntRk) el.cntRk.textContent = activeRequests.filter((r) => r.controlType === 'Рк').length;
+  if (el.cntCd) el.cntCd.textContent = activeRequests.filter((r) => r.controlType === 'Цд').length;
 }
 
 /** Собирает текущие значения формы в объект */
@@ -176,9 +202,13 @@ function getFormData() {
   return {
     objectName: el.fObjectName.value.trim(),
     controlType: el.fControlType.value,
+    jointNumber: el.fJointNumber.value.trim(),
+    diameter: el.fDiameter.value.trim(),
+    thickness: el.fThickness.value.trim(),
+    steelGrade: el.fSteelGrade.value.trim(),
+    welderId: el.fWelderId.value.trim(),
     description: el.fDescription.value.trim(),
     contactPerson: el.fContactPerson.value.trim(),
-    status: el.fStatus.value,
   };
 }
 
@@ -193,28 +223,33 @@ function validateForm(data) {
   return { valid: true };
 }
 
-/** Заполняет форму данными существующей заявки */
+/** Заполняет форму данными заявки (при редактировании) */
 function fillForm(request) {
-  el.fObjectName.value = request.objectName;
-  el.fControlType.value = request.controlType;
+  el.fObjectName.value = request.objectName || '';
+  el.fControlType.value = request.controlType || 'Вик';
+  el.fJointNumber.value = request.jointNumber || '';
+  el.fDiameter.value = request.diameter || '';
+  el.fThickness.value = request.thickness || '';
+  el.fSteelGrade.value = request.steelGrade || '';
+  el.fWelderId.value = request.welderId || '';
   el.fDescription.value = request.description || '';
   el.fContactPerson.value = request.contactPerson || '';
-  el.fStatus.value = request.status;
-  el.fCreatedAt.value = formatDate(request.createdAt);
-  el.fAuthor.value = request.author;
 
-  el.formTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Редактирование заявки';
-  el.btnSubmit.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Обновить</span>';
-  el.btnCancelEdit.style.display = 'flex';
+  el.formTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Редактирование';
+  el.btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Сохранить</span>';
+  el.btnCancelEdit.style.display = 'inline-flex';
 }
 
-/** Сбрасывает форму в режим "новая заявка" */
-function resetForm(author) {
+/** Сбрасывает форму в начальное состояние */
+function resetForm(currentUser) {
   el.form.reset();
-  el.fCreatedAt.value = '—';
-  el.fAuthor.value = author || '—';
-  el.fStatus.value = 'Новая';
   el.fControlType.value = 'Вик';
+
+  el.fJointNumber.value = '';
+  el.fDiameter.value = '';
+  el.fThickness.value = '';
+  el.fSteelGrade.value = '';
+  el.fWelderId.value = '';
 
   el.formTitle.innerHTML = '<i class="fa-solid fa-file-pen"></i> Новая заявка';
   el.btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Создать</span>';
@@ -257,13 +292,46 @@ function setUserBadge(name) {
 
 /** Модалка подтверждения удаления */
 let pendingDeleteId = null;
-let deleteCallback = null;
-
 function showConfirmDelete(request, onConfirm) {
-  pendingDeleteId = request.id;
-  deleteCallback = onConfirm;
-  if (el.confirmText) el.confirmText.textContent = `Заявка «${request.objectName}» (#${request.id}) будет удалена без возможности восстановления.`;
-  if (el.modalConfirm) el.modalConfirm.classList.add('show');
+  el.confirmText.innerHTML = `Вы действительно хотите удалить заявку <b>${escapeHtml(request.objectName)}</b>?`;
+  el.modalConfirm.classList.add('show');
+  
+  const handleConfirm = () => {
+    onConfirm(request.id);
+    closeModal();
+  };
+  const closeModal = () => {
+    el.modalConfirm.classList.remove('show');
+    el.btnConfirmDelete.removeEventListener('click', handleConfirm);
+    el.btnCancelDelete.removeEventListener('click', closeModal);
+  };
+  
+  el.btnConfirmDelete.addEventListener('click', handleConfirm);
+  el.btnCancelDelete.addEventListener('click', closeModal);
+}
+
+function showRejectModal(onConfirm) {
+  el.inputDefectReason.value = '';
+  el.modalReject.classList.add('show');
+  el.inputDefectReason.focus();
+
+  const handleConfirm = () => {
+    const reason = el.inputDefectReason.value.trim();
+    if (!reason) {
+      showToast('Укажите причину брака', 'error');
+      return;
+    }
+    onConfirm(reason);
+    closeModal();
+  };
+  const closeModal = () => {
+    el.modalReject.classList.remove('show');
+    el.btnConfirmReject.removeEventListener('click', handleConfirm);
+    el.btnCancelReject.removeEventListener('click', closeModal);
+  };
+
+  el.btnConfirmReject.addEventListener('click', handleConfirm);
+  el.btnCancelReject.addEventListener('click', closeModal);
 }
 
 function hideConfirmDelete() {
@@ -328,6 +396,7 @@ export const UI = {
   hideUserModal,
   setUserBadge,
   showConfirmDelete,
+  showRejectModal,
   hideConfirmDelete,
   bindConfirmDeleteButtons,
   showToast,

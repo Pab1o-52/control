@@ -222,7 +222,8 @@ const App = (() => {
           ...data,
           createdAt: new Date().toISOString(),
           author: currentUser || 'Неизвестный автор',
-          approved: null
+          approved: null,
+          status: 'Новая'
         });
         UI.showToast(`Заявка «${newRequest.objectName}» создана`, 'success');
 
@@ -290,19 +291,37 @@ const App = (() => {
   }
 
   /** Обработчик голосования */
-  async function handleVoteClick(id, value) {
+  function handleVoteClick(id, value) {
     const request = getById(id);
     if (!request) return;
 
-    try {
-      await updateInFirebase(id, {
-        approved: value,
-        status: value ? 'Завершена' : 'В работе'
+    if (value === false) {
+      // Открываем модалку для ввода причины брака
+      UI.showRejectModal(async (reason) => {
+        try {
+          await updateInFirebase(id, {
+            approved: false,
+            status: 'Завершена',
+            defectReason: reason
+          });
+          refreshList();
+          UI.showToast('❌ Заявка признана НЕ ГОДНОЙ', 'error');
+        } catch (err) {
+          UI.showToast('Ошибка при голосовании', 'error');
+        }
       });
-      refreshList();
-      UI.showToast(value ? '✅ Заявка признана ГОДНОЙ' : '❌ Заявка признана НЕ ГОДНОЙ', value ? 'success' : 'error');
-    } catch (err) {
-      UI.showToast('Ошибка при голосовании', 'error');
+    } else {
+      // Сразу подтверждаем
+      updateInFirebase(id, {
+        approved: true,
+        status: 'Завершена',
+        defectReason: null
+      }).then(() => {
+        refreshList();
+        UI.showToast('✅ Заявка признана ГОДНОЙ', 'success');
+      }).catch(() => {
+        UI.showToast('Ошибка при голосовании', 'error');
+      });
     }
   }
 
@@ -333,17 +352,38 @@ const App = (() => {
         UI.showToast('Нет заявок для экспорта', 'error');
         return;
       }
-      const blob = new Blob([JSON.stringify(requests, null, 2)], { type: 'application/json' });
+      
+      // Формируем CSV
+      const headers = ['ID', 'Объект', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Автор', 'Дата'];
+      const rows = requests.map(r => [
+        r.id,
+        `"${(r.objectName || '').replace(/"/g, '""')}"`,
+        `"${(r.jointNumber || '').replace(/"/g, '""')}"`,
+        r.diameter || '',
+        r.thickness || '',
+        r.steelGrade || '',
+        r.welderId || '',
+        r.controlType || '',
+        r.status || '',
+        r.approved === true ? 'Да' : (r.approved === false ? 'Нет' : ''),
+        `"${(r.defectReason || '').replace(/"/g, '""')}"`,
+        `"${(r.author || '').replace(/"/g, '""')}"`,
+        r.createdAt || ''
+      ]);
+      
+      const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const dateStr = new Date().toISOString().slice(0, 10);
       a.href = url;
-      a.download = `weld_requests_${dateStr}.json`;
+      a.download = `weld_requests_${dateStr}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      UI.showToast('Файл заявок экспортирован', 'success');
+      UI.showToast('Реестр экспортирован в CSV', 'success');
     } catch (err) {
       console.error('[App] Ошибка экспорта:', err);
       UI.showToast('Ошибка при экспорте данных', 'error');

@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
 
@@ -140,6 +140,32 @@
           </select>
         </div>
 
+        <div class="form-row three-cols">
+          <div class="form-group">
+            <label for="f-jointNumber">№ стыка</label>
+            <input type="text" id="f-jointNumber" placeholder="Например: С-1">
+          </div>
+          <div class="form-group">
+            <label for="f-diameter">Ø, мм</label>
+            <input type="text" id="f-diameter" placeholder="530">
+          </div>
+          <div class="form-group">
+            <label for="f-thickness">S, мм</label>
+            <input type="text" id="f-thickness" placeholder="10">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="f-steelGrade">Марка стали</label>
+            <input type="text" id="f-steelGrade" placeholder="09Г2С">
+          </div>
+          <div class="form-group half">
+            <label for="f-welderId">Клеймо сварщика</label>
+            <input type="text" id="f-welderId" placeholder="АБ-12">
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="f-description"><i class="fa-solid fa-align-left"></i> Описание работ</label>
           <textarea id="f-description" rows="2" placeholder="Краткое описание объема работ..."></textarea>
@@ -150,29 +176,9 @@
           <input type="text" id="f-contactPerson" placeholder="ФИО ответственного">
         </div>
 
-        <div class="form-group">
-          <label for="f-status"><i class="fa-solid fa-spinner"></i> Статус</label>
-          <select id="f-status">
-            <option value="Новая">Новая</option>
-            <option value="В работе">В работе</option>
-            <option value="Завершена">Завершена</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half">
-            <label><i class="fa-solid fa-calendar-days"></i> Дата</label>
-            <input type="text" id="f-createdAt" readonly placeholder="—">
-          </div>
-          <div class="form-group half">
-            <label><i class="fa-solid fa-user"></i> Автор</label>
-            <input type="text" id="f-author" readonly placeholder="—">
-          </div>
-        </div>
-
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" id="btn-submit">
-            <i class="fa-solid fa-check"></i> <span>Создать</span>
+            <i class="fa-solid fa-check"></i> <span>Сохранить</span>
           </button>
           <button type="button" class="btn btn-ghost" id="btn-cancel-edit">
             <i class="fa-solid fa-xmark"></i> Отмена
@@ -197,6 +203,22 @@
   </div>
 </div>
 
+<!-- ===== Модальное окно: причина брака ===== -->
+<div class="modal-overlay" id="modal-reject">
+  <div class="modal glass modal-danger">
+    <div class="modal-icon danger"><i class="fa-solid fa-xmark"></i></div>
+    <h3>Причина брака</h3>
+    <p>Укажите обнаруженные дефекты (например: Непровар, Пора, Трещина).</p>
+    <input type="text" id="input-defect-reason" placeholder="Укажите дефект..." required>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="btn-confirm-reject" type="button">
+        <i class="fa-solid fa-xmark"></i> Забраковать
+      </button>
+      <button class="btn btn-ghost" id="btn-cancel-reject" type="button">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Модальное окно: подтверждение удаления ===== -->
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal glass modal-danger">
@@ -216,6 +238,6 @@
 <div id="toast-container"></div>
 
 <!-- Модули приложения -->
-<script type="module" src="js/app.js"></script>
+<script type="module" src="js/app.js?v=3"></script>
 </body>
 </html>

@@ -728,9 +728,25 @@ select option { background: #12141f; color: var(--text-main); }
 
   /* Когда форма свернута — список растягивается */
   .panel-form.collapsed {
-    flex: 0 0 44px !important;
-    min-height: 44px !important;
-    max-height: 44px !important;
+    flex: 0 0 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .panel-form.collapsed .panel-header {
+    padding: 0 10px !important;
+    min-height: 28px !important;
+    align-items: center;
+  }
+  .panel-form.collapsed h2 {
+    font-size: 13px;
+    margin: 0;
+  }
+  .panel-form.collapsed .panel-toggle {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
   }
   .panel-form.collapsed + .panel-list {
     flex: 1 1 auto !important;
@@ -740,9 +756,9 @@ select option { background: #12141f; color: var(--text-main); }
 
   /* Когда список свернут — форма не меняется */
   .panel-list.collapsed {
-    flex: 0 0 44px !important;
-    min-height: 44px !important;
-    max-height: 44px !important;
+    flex: 0 0 75px !important;
+    min-height: 75px !important;
+    max-height: 75px !important;
   }
   .panel-list.collapsed + .panel-form {
     flex: 0 0 auto !important;
@@ -881,4 +897,50 @@ select option { background: #12141f; color: var(--text-main); }
   .panel-form.collapsed + .panel-list {
     min-height: 50vh !important;
   }
+}
+
+/* Новые поля формы */
+.three-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .three-cols { grid-template-columns: 1fr; }
+}
+
+/* Информация о шве в карточке */
+.rc-spec-info {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  background: rgba(255,255,255,0.03);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.rc-spec-info span {
+  display: flex;
+  align-items: center;
+}
+.rc-spec-info b {
+  color: var(--text-main);
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+/* Причина брака */
+.rc-defect {
+  font-size: 13px;
+  color: var(--color-uzk);
+  background: rgba(255, 107, 107, 0.1);
+  border-left: 2px solid var(--color-uzk);
+  padding: 4px 8px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+.rc-defect i {
+  margin-right: 4px;
 }
