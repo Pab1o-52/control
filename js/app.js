@@ -251,7 +251,7 @@ const App = (() => {
           createdAt: new Date().toISOString(),
           author: currentUser || 'Неизвестный автор',
           approved: null,
-          status: 'Новая'
+          status: data.status || 'Новая'
         });
         UI.showToast(`Заявка «${newRequest.objectName}» создана`, 'success');
 

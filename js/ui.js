@@ -35,6 +35,9 @@ function cacheElements() {
   el.fWelderId = document.getElementById('f-welderId');
   el.fDescription = document.getElementById('f-description');
   el.fContactPerson = document.getElementById('f-contactPerson');
+  el.fStatus = document.getElementById('f-status');
+  el.fCreatedAt = document.getElementById('f-createdAt');
+  el.fAuthor = document.getElementById('f-author');
   el.btnSubmit = document.getElementById('btn-submit');
   el.btnCancelEdit = document.getElementById('btn-cancel-edit');
 
@@ -202,20 +205,21 @@ function getFormData() {
   return {
     objectName: el.fObjectName.value.trim(),
     controlType: el.fControlType.value,
-    jointNumber: el.fJointNumber.value.trim(),
-    diameter: el.fDiameter.value.trim(),
-    thickness: el.fThickness.value.trim(),
-    steelGrade: el.fSteelGrade.value.trim(),
-    welderId: el.fWelderId.value.trim(),
-    description: el.fDescription.value.trim(),
-    contactPerson: el.fContactPerson.value.trim(),
+    jointNumber: el.fJointNumber ? el.fJointNumber.value.trim() : '',
+    diameter: el.fDiameter ? el.fDiameter.value.trim() : '',
+    thickness: el.fThickness ? el.fThickness.value.trim() : '',
+    steelGrade: el.fSteelGrade ? el.fSteelGrade.value.trim() : '',
+    welderId: el.fWelderId ? el.fWelderId.value.trim() : '',
+    description: el.fDescription ? el.fDescription.value.trim() : '',
+    contactPerson: el.fContactPerson ? el.fContactPerson.value.trim() : '',
+    status: el.fStatus ? el.fStatus.value : 'Новая',
   };
 }
 
 /** Проверяет валидность формы */
 function validateForm(data) {
   if (!data.objectName) {
-    return { valid: false, message: 'Укажите название объекта' };
+    return { valid: false, message: 'Укажите «Установка, Проект/Акт»' };
   }
   if (!data.controlType) {
     return { valid: false, message: 'Выберите тип контроля' };
@@ -227,13 +231,16 @@ function validateForm(data) {
 function fillForm(request) {
   el.fObjectName.value = request.objectName || '';
   el.fControlType.value = request.controlType || 'Вик';
-  el.fJointNumber.value = request.jointNumber || '';
-  el.fDiameter.value = request.diameter || '';
-  el.fThickness.value = request.thickness || '';
-  el.fSteelGrade.value = request.steelGrade || '';
-  el.fWelderId.value = request.welderId || '';
-  el.fDescription.value = request.description || '';
-  el.fContactPerson.value = request.contactPerson || '';
+  if (el.fJointNumber) el.fJointNumber.value = request.jointNumber || request.jointId || '';
+  if (el.fDiameter) el.fDiameter.value = request.diameter || '';
+  if (el.fThickness) el.fThickness.value = request.thickness || '';
+  if (el.fSteelGrade) el.fSteelGrade.value = request.steelGrade || '';
+  if (el.fWelderId) el.fWelderId.value = request.welderId || request.welderMark || '';
+  if (el.fDescription) el.fDescription.value = request.description || '';
+  if (el.fContactPerson) el.fContactPerson.value = request.contactPerson || '';
+  if (el.fStatus) el.fStatus.value = request.status || 'Новая';
+  if (el.fCreatedAt) el.fCreatedAt.value = formatDate(request.createdAt);
+  if (el.fAuthor) el.fAuthor.value = request.author || '—';
 
   el.formTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Редактирование';
   el.btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Сохранить</span>';
@@ -245,11 +252,14 @@ function resetForm(currentUser) {
   el.form.reset();
   el.fControlType.value = 'Вик';
 
-  el.fJointNumber.value = '';
-  el.fDiameter.value = '';
-  el.fThickness.value = '';
-  el.fSteelGrade.value = '';
-  el.fWelderId.value = '';
+  if (el.fJointNumber) el.fJointNumber.value = '';
+  if (el.fDiameter) el.fDiameter.value = '';
+  if (el.fThickness) el.fThickness.value = '';
+  if (el.fSteelGrade) el.fSteelGrade.value = '';
+  if (el.fWelderId) el.fWelderId.value = '';
+  if (el.fStatus) el.fStatus.value = 'Новая';
+  if (el.fCreatedAt) el.fCreatedAt.value = '—';
+  if (el.fAuthor) el.fAuthor.value = currentUser || '—';
 
   el.formTitle.innerHTML = '<i class="fa-solid fa-file-pen"></i> Новая заявка';
   el.btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Создать</span>';

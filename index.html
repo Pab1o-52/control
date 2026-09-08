@@ -131,11 +131,6 @@
 
       <form id="request-form" autocomplete="off">
         <div class="form-group">
-          <label for="f-objectName"><i class="fa-solid fa-industry"></i> Название объекта *</label>
-          <input type="text" id="f-objectName" required placeholder="Например: Трубопровод №4">
-        </div>
-
-        <div class="form-group">
           <label for="f-controlType"><i class="fa-solid fa-magnifying-glass-chart"></i> Тип контроля *</label>
           <select id="f-controlType" required>
             <option value="Вик">Вик — Визуальный и измерительный</option>
@@ -145,29 +140,34 @@
           </select>
         </div>
 
-        <div class="form-row three-cols">
-          <div class="form-group">
-            <label for="f-jointNumber">№ стыка</label>
-            <input type="text" id="f-jointNumber" placeholder="Например: С-1">
-          </div>
-          <div class="form-group">
-            <label for="f-diameter">Ø, мм</label>
-            <input type="text" id="f-diameter" placeholder="530">
-          </div>
-          <div class="form-group">
-            <label for="f-thickness">S, мм</label>
-            <input type="text" id="f-thickness" placeholder="10">
-          </div>
+        <div class="form-group">
+          <label for="f-objectName"><i class="fa-solid fa-industry"></i> Установка, Проект/Акт *</label>
+          <input type="text" id="f-objectName" required placeholder="Например: АВТ-6, проект №12">
         </div>
 
         <div class="form-row">
           <div class="form-group half">
-            <label for="f-steelGrade">Марка стали</label>
+            <label for="f-steelGrade"><i class="fa-solid fa-shield-halved"></i> Марка стали</label>
             <input type="text" id="f-steelGrade" placeholder="09Г2С">
           </div>
           <div class="form-group half">
-            <label for="f-welderId">Клеймо сварщика</label>
+            <label for="f-welderId"><i class="fa-solid fa-stamp"></i> Клеймо сварщика</label>
             <input type="text" id="f-welderId" placeholder="АБ-12">
+          </div>
+        </div>
+
+        <div class="form-row three-cols">
+          <div class="form-group">
+            <label for="f-jointNumber"><i class="fa-solid fa-hashtag"></i> √ стыка</label>
+            <input type="text" id="f-jointNumber" placeholder="№ стыка">
+          </div>
+          <div class="form-group">
+            <label for="f-diameter"><i class="fa-solid fa-circle-notch"></i> Диаметр, мм</label>
+            <input type="text" id="f-diameter" placeholder="Ø мм">
+          </div>
+          <div class="form-group">
+            <label for="f-thickness"><i class="fa-solid fa-arrows-left-right"></i> S, мм</label>
+            <input type="text" id="f-thickness" placeholder="S, мм">
           </div>
         </div>
 
@@ -179,6 +179,26 @@
         <div class="form-group">
           <label for="f-contactPerson"><i class="fa-solid fa-id-card"></i> Контактное лицо</label>
           <input type="text" id="f-contactPerson" placeholder="ФИО ответственного">
+        </div>
+
+        <div class="form-group">
+          <label for="f-status"><i class="fa-solid fa-spinner"></i> Статус</label>
+          <select id="f-status">
+            <option value="Новая">Новая</option>
+            <option value="В работе">В работе</option>
+            <option value="Завершена">Завершена</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label><i class="fa-solid fa-calendar-days"></i> Дата</label>
+            <input type="text" id="f-createdAt" readonly placeholder="—">
+          </div>
+          <div class="form-group half">
+            <label><i class="fa-solid fa-user"></i> Автор</label>
+            <input type="text" id="f-author" readonly placeholder="—">
+          </div>
         </div>
 
         <div class="form-actions">
