@@ -25,22 +25,37 @@ const TELEGRAM_CHAT_ID = '7848540577';
 
 /**
  * Отправляет текстовое уведомление в Telegram бот
+ * Использует прокси-сервер для обхода блокировок
  */
 async function sendTelegramMessage(text) {
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) return;
+
+  // Используем прокси через Cyclic (Cloudflare Workers)
+  const proxyUrl = `https://telegram-bot-api.cyclic.app/bot${TELEGRAM_TOKEN}/sendMessage`;
+
   try {
-    const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-    await fetch(url, {
+    console.log('[Telegram] Отправка через прокси...');
+    const response = await fetch(proxyUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         chat_id: TELEGRAM_CHAT_ID,
         text: text,
         parse_mode: 'HTML'
       })
     });
+
+    const data = await response.json();
+
+    if (data.ok) {
+      console.log('[Telegram] Уведомление отправлено успешно!');
+    } else {
+      console.error('[Telegram] Ошибка отправки:', data.description || data);
+    }
   } catch (err) {
-    console.error('[Telegram] Ошибка отправки уведомления:', err);
+    console.error('[Telegram] Не удалось отправить уведомление:', err);
   }
 }
 
