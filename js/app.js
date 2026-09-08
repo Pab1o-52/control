@@ -331,6 +331,10 @@ const App = (() => {
     const voteBtn = e.target.closest('.btn-vote');
     if (voteBtn) {
       e.stopPropagation();
+      if (isGuestUser()) {
+        UI.showToast('Гости не могут изменять статус годности заявок', 'error');
+        return;
+      }
       const id = String(voteBtn.dataset.id);
       const value = voteBtn.classList.contains('btn-approve');
       handleVoteClick(id, value);
@@ -346,8 +350,15 @@ const App = (() => {
 
   /** Обработчик голосования */
   function handleVoteClick(id, value) {
+    if (isGuestUser()) {
+      UI.showToast('Гости не могут изменять статус годности заявок', 'error');
+      return;
+    }
+
     const request = getById(id);
     if (!request) return;
+
+    const inspector = currentUser || getUsername() || 'Контролёр';
 
     if (value === false) {
       // Открываем модалку для ввода причины брака
@@ -356,7 +367,8 @@ const App = (() => {
           await updateInFirebase(id, {
             approved: false,
             status: 'Завершена',
-            defectReason: reason
+            defectReason: reason,
+            rejectedBy: inspector
           });
           refreshList();
           UI.showToast('❌ Заявка признана НЕ ГОДНОЙ', 'error');
@@ -365,16 +377,17 @@ const App = (() => {
         }
       });
     } else {
-      // Открываем модалку подтверждения годности
-      UI.showApproveModal(request, async () => {
+      // Открываем модалку подтверждения годности с указанием контролёра
+      UI.showApproveModal(request, inspector, async (confirmedInspector) => {
         try {
           await updateInFirebase(id, {
             approved: true,
             status: 'Завершена',
-            defectReason: null
+            defectReason: null,
+            approvedBy: confirmedInspector || inspector
           });
           refreshList();
-          UI.showToast('✅ Заявка признана ГОДНОЙ', 'success');
+          UI.showToast(`✅ Заявка признана ГОДНОЙ (${confirmedInspector || inspector})`, 'success');
         } catch (err) {
           UI.showToast('Ошибка при голосовании', 'error');
         }
@@ -414,7 +427,7 @@ const App = (() => {
       }
       
       // Формируем CSV
-      const headers = ['ID', 'Объект', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Автор', 'Дата'];
+      const headers = ['ID', 'Объект', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Контролер', 'Автор', 'Дата'];
       const rows = requests.map(r => [
         r.id,
         `"${(r.objectName || '').replace(/"/g, '""')}"`,
@@ -427,6 +440,7 @@ const App = (() => {
         r.status || '',
         r.approved === true ? 'Да' : (r.approved === false ? 'Нет' : ''),
         `"${(r.defectReason || '').replace(/"/g, '""')}"`,
+        `"${(r.approvedBy || r.rejectedBy || '').replace(/"/g, '""')}"`,
         `"${(r.author || '').replace(/"/g, '""')}"`,
         r.createdAt || ''
       ]);

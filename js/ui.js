@@ -54,6 +54,7 @@ function cacheElements() {
 
   el.modalApprove = document.getElementById('modal-approve');
   el.approveText = document.getElementById('approve-text');
+  el.inputApproveInspector = document.getElementById('input-approve-inspector');
   el.btnConfirmApprove = document.getElementById('btn-confirm-approve');
   el.btnCancelApprove = document.getElementById('btn-cancel-approve');
 
@@ -96,16 +97,18 @@ function typeIconClass(type) {
 }
 
 /** Строит HTML одной карточки заявки (ВМЕСТО ХЕША — ОПИСАНИЕ) */
-function buildCardHtml(request, isActive) {
+function buildCardHtml(request, isActive, isGuest) {
   let statusClass = 'st-new';
   if (request.status === 'В работе') statusClass = 'st-work';
   else if (request.status === 'Завершена') statusClass = 'st-done';
 
   let verdictHtml = '';
   if (request.approved === true) {
-    verdictHtml = `<span class="verdict approved"><i class="fa-solid fa-check"></i> ГОДЕН</span>`;
+    const inspectorText = request.approvedBy ? ` · ${escapeHtml(request.approvedBy)}` : '';
+    verdictHtml = `<span class="verdict approved" title="${escapeHtml(request.approvedBy || '')}"><i class="fa-solid fa-check"></i> ГОДЕН${inspectorText}</span>`;
   } else if (request.approved === false) {
-    verdictHtml = `<span class="verdict rejected"><i class="fa-solid fa-xmark"></i> НЕ ГОДЕН</span>`;
+    const inspectorText = request.rejectedBy ? ` · ${escapeHtml(request.rejectedBy)}` : '';
+    verdictHtml = `<span class="verdict rejected" title="${escapeHtml(request.rejectedBy || '')}"><i class="fa-solid fa-xmark"></i> НЕ ГОДЕН${inspectorText}</span>`;
   }
   
   let defectReasonHtml = '';
@@ -130,13 +133,26 @@ function buildCardHtml(request, isActive) {
     </div>`;
   }
 
+  // Действия голосования: гости не могут голосовать/признавать годным/браковать
+  const actionsHtml = isGuest ? '' : `
+    <div class="rc-actions">
+      <button class="btn-vote btn-approve" data-id="${request.id}" type="button"><i class="fa-solid fa-check"></i> Годен</button>
+      <button class="btn-vote btn-reject" data-id="${request.id}" type="button"><i class="fa-solid fa-xmark"></i> Не годен</button>
+    </div>
+  `;
+
+  // Кнопка удаления: гости не могут удалять заявки
+  const delHtml = isGuest ? '' : `
+    <button class="rc-del" data-id="${request.id}" title="Удалить заявку">
+      <i class="fa-solid fa-trash"></i>
+    </button>
+  `;
+
   return `
     <div class="request-card type-${escapeHtml(request.controlType)} ${isActive ? 'active' : ''} ${request.approved === true ? 'approved' : ''} ${request.approved === false ? 'rejected' : ''}" data-id="${request.id}">
       <div class="rc-header">
         <h3 class="rc-title">${escapeHtml(request.objectName)}</h3>
-        <button class="rc-del" data-id="${request.id}" title="Удалить заявку">
-          <i class="fa-solid fa-trash"></i>
-        </button>
+        ${delHtml}
       </div>
       ${specInfoHtml}
       ${descHtml}
@@ -150,10 +166,7 @@ function buildCardHtml(request, isActive) {
         ${verdictHtml}
       </div>
       <div class="rc-date"><i class="fa-regular fa-clock"></i>${formatDate(request.createdAt)} · ${escapeHtml(request.author)}</div>
-      <div class="rc-actions">
-        <button class="btn-vote btn-approve" data-id="${request.id}" type="button"><i class="fa-solid fa-check"></i> Годен</button>
-        <button class="btn-vote btn-reject" data-id="${request.id}" type="button"><i class="fa-solid fa-xmark"></i> Не годен</button>
-      </div>
+      ${actionsHtml}
     </div>
   `;
 }
@@ -197,7 +210,7 @@ function renderList(requests, filters, activeId) {
       if (icon) icon.className = 'fa-solid fa-filter-circle-xmark';
     }
   } else {
-    el.requestsList.innerHTML = filtered.map((r) => buildCardHtml(r, r.id === activeId)).join('');
+    el.requestsList.innerHTML = filtered.map((r) => buildCardHtml(r, r.id === activeId, isGuest)).join('');
   }
 
   updateCounters(requests, isGuest);
@@ -338,16 +351,23 @@ function showConfirmDelete(request, onConfirm) {
   el.btnCancelDelete.addEventListener('click', closeModal);
 }
 
-function showApproveModal(request, onConfirm) {
+function showApproveModal(request, defaultInspector, onConfirm) {
   const name = request.objectName || 'Заявка';
   const joint = request.jointNumber ? ` (стык №${request.jointNumber})` : '';
   if (el.approveText) {
     el.approveText.innerHTML = `Признать годным: <b>${escapeHtml(name)}</b>${escapeHtml(joint)}?<br><span style="color:var(--text-dim);font-size:11px;">После подтверждения статус заявки будет «Завершена», а для гостей она перестанет отображаться.</span>`;
   }
+  if (el.inputApproveInspector) {
+    el.inputApproveInspector.value = defaultInspector || '';
+  }
   el.modalApprove.classList.add('show');
+  if (el.inputApproveInspector) {
+    el.inputApproveInspector.focus();
+  }
 
   const handleConfirm = () => {
-    onConfirm();
+    const inspector = el.inputApproveInspector ? el.inputApproveInspector.value.trim() : '';
+    onConfirm(inspector || defaultInspector || 'Контролёр');
     closeModal();
   };
   const closeModal = () => {
