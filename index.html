@@ -30,14 +30,19 @@
   <div class="modal glass">
     <div class="modal-icon"><i class="fa-solid fa-lock"></i></div>
     <h3>Вход в систему</h3>
-    <p>Введите логин и пароль для доступа к системе</p>
-    <input type="text" id="login-username" placeholder="Логин" required>
-    <input type="password" id="login-password" placeholder="Пароль" required>
-    <button class="btn btn-primary" id="btn-login" type="button">
-      <i class="fa-solid fa-arrow-right"></i> Войти
-    </button>
-    <p style="margin-top:10px;font-size:12px;color:var(--text-faint);">
-      Для регистрации обратитесь к администратору
+    <p>Войдите под своей учётной записью или как гость</p>
+    <input type="text" id="login-username" placeholder="Логин или имя...">
+    <input type="password" id="login-password" placeholder="Пароль (для админа)">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+      <button class="btn btn-primary" id="btn-login" type="button" style="width:100%;">
+        <i class="fa-solid fa-arrow-right"></i> Войти
+      </button>
+      <button class="btn btn-secondary" id="btn-guest" type="button" style="width:100%;background:rgba(0,212,255,0.12);border:1px solid var(--neon-blue);color:var(--neon-blue);">
+        <i class="fa-solid fa-user-astronaut"></i> Войти как гость
+      </button>
+    </div>
+    <p style="margin-top:12px;font-size:11px;color:var(--text-faint);">
+      Гостевой доступ позволяет просматривать и создавать заявки без пароля
     </p>
   </div>
 </div>

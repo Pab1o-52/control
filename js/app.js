@@ -54,15 +54,13 @@ const App = (() => {
   function checkLogin() {
     const saved = sessionStorage.getItem('weld_logged_in');
     if (saved === 'true') {
-      const username = getUsername();
-      if (username) {
-        currentUser = username;
-        UI.setUserBadge(username);
-        document.getElementById('modal-login').classList.remove('show');
-        document.getElementById('app').style.display = 'flex';
-        refreshAll();
-        return;
-      }
+      const username = getUsername() || 'Гость';
+      currentUser = username;
+      UI.setUserBadge(username);
+      document.getElementById('modal-login').classList.remove('show');
+      document.getElementById('app').style.display = 'flex';
+      refreshAll();
+      return;
     }
     document.getElementById('modal-login').classList.add('show');
     document.getElementById('app').style.display = 'none';
@@ -74,11 +72,22 @@ const App = (() => {
 
     // --- Вход ---
     document.getElementById('btn-login').addEventListener('click', handleLogin);
+    const btnGuest = document.getElementById('btn-guest');
+    if (btnGuest) {
+      btnGuest.addEventListener('click', handleGuestLogin);
+    }
     document.getElementById('login-password').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') handleLogin();
     });
     document.getElementById('login-username').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleLogin();
+      if (e.key === 'Enter') {
+        const password = document.getElementById('login-password').value.trim();
+        if (password) {
+          handleLogin();
+        } else {
+          handleGuestLogin();
+        }
+      }
     });
 
     // --- Модалка имени пользователя ---
@@ -143,19 +152,38 @@ const App = (() => {
     });
   }
 
+  /** Обработчик гостевого входа */
+  function handleGuestLogin() {
+    const inputName = document.getElementById('login-username').value.trim();
+    const existingName = getUsername();
+    const guestName = inputName || existingName || 'Гость';
+
+    sessionStorage.setItem('weld_logged_in', 'true');
+    sessionStorage.setItem('weld_user_role', 'guest');
+    setUsername(guestName);
+    currentUser = guestName;
+    UI.setUserBadge(guestName);
+    document.getElementById('modal-login').classList.remove('show');
+    document.getElementById('app').style.display = 'flex';
+    UI.showToast(`Вы вошли как ${guestName}`, 'info');
+    refreshAll();
+  }
+
   /** Обработчик входа */
   function handleLogin() {
     const login = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value.trim();
     
+    // Если логин пустой или пароль не указан — выполняем гостевой вход
     if (!login || !password) {
-      UI.showToast('Введите логин и пароль', 'error');
+      handleGuestLogin();
       return;
     }
 
     const user = authenticate(login, password);
     if (user) {
       sessionStorage.setItem('weld_logged_in', 'true');
+      sessionStorage.setItem('weld_user_role', user.role || 'user');
       setUsername(login);
       currentUser = login;
       UI.setUserBadge(login);
@@ -164,7 +192,7 @@ const App = (() => {
       UI.showToast(`Добро пожаловать, ${login}!`, 'success');
       refreshAll();
     } else {
-      UI.showToast('Неверный логин или пароль', 'error');
+      UI.showToast('Неверный пароль. Для входа без пароля нажмите «Войти как гость»', 'error');
     }
   }
 

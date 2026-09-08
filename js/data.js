@@ -131,19 +131,21 @@ function subscribeToFirebase(callback) {
 
 // ===== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ =====
 function getUsers() {
+  const defaultUsers = { 
+    admin: { password: 'admin123', role: 'admin' },
+    user: { password: 'user123', role: 'user' },
+    guest: { password: '', role: 'guest' },
+    гость: { password: '', role: 'guest' }
+  };
   try {
     const raw = localStorage.getItem(USERS_KEY);
     if (!raw) {
-      const defaultUsers = { 
-        admin: { password: 'admin123', role: 'admin' },
-        user: { password: 'user123', role: 'user' }
-      };
       saveUsers(defaultUsers);
       return defaultUsers;
     }
-    return JSON.parse(raw);
+    return { ...defaultUsers, ...JSON.parse(raw) };
   } catch { 
-    return { admin: { password: 'admin123', role: 'admin' } };
+    return defaultUsers;
   }
 }
 
@@ -153,8 +155,18 @@ function saveUsers(users) {
 
 function authenticate(login, password) {
   const users = getUsers();
+  const lower = (login || '').toLowerCase().trim();
+
+  // Быстрый гостевой доступ
+  if (lower === 'гость' || lower === 'guest' || (!password && login)) {
+    return { role: 'guest', name: login || 'Гость' };
+  }
+
   if (users[login] && users[login].password === password) {
     return users[login];
+  }
+  if (users[lower] && users[lower].password === password) {
+    return users[lower];
   }
   return null;
 }
