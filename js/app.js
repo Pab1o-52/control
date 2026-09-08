@@ -211,10 +211,31 @@ const App = (() => {
     UI.els.fAuthor.value = currentUser;
   }
 
+  /** Проверяет, является ли текущий пользователь гостем */
+  function isGuestUser() {
+    const role = sessionStorage.getItem('weld_user_role');
+    if (role === 'admin' || role === 'user') return false;
+    if (role === 'guest') return true;
+    const name = (currentUser || getUsername() || '').toLowerCase().trim();
+    return name !== 'admin';
+  }
+
   /** Перерисовывает список заявок */
   function refreshList() {
     const requests = getAll();
     const filters = UI.getFilters();
+    filters.isGuest = isGuestUser();
+
+    // Если выбранная заявка стала годной, для гостя сбрасываем форму
+    if (filters.isGuest && activeRequestId) {
+      const activeReq = getById(activeRequestId);
+      if (activeReq && activeReq.approved === true) {
+        activeRequestId = null;
+        isCreatingNew = false;
+        UI.resetForm(currentUser);
+      }
+    }
+
     const filtered = UI.renderList(requests, filters, activeRequestId);
   }
 
@@ -380,7 +401,10 @@ const App = (() => {
 
   function handleExport() {
     try {
-      const requests = getAll();
+      let requests = getAll();
+      if (isGuestUser()) {
+        requests = requests.filter(r => r.approved !== true);
+      }
       if (requests.length === 0) {
         UI.showToast('Нет заявок для экспорта', 'error');
         return;

@@ -158,11 +158,20 @@ function buildCardHtml(request, isActive) {
  */
 function renderList(requests, filters, activeId) {
   const search = (filters.search || '').trim().toLowerCase();
+  const isGuest = filters.isGuest !== undefined ? filters.isGuest : false;
+
   const filtered = requests.filter((r) => {
+    // Гости не должны видеть заявки, признанные годными
+    if (isGuest && r.approved === true) {
+      return false;
+    }
+
     const matchesSearch = !search || 
-      r.objectName.toLowerCase().includes(search) || 
+      (r.objectName && r.objectName.toLowerCase().includes(search)) || 
       (r.description && r.description.toLowerCase().includes(search)) ||
-      (r.contactPerson && r.contactPerson.toLowerCase().includes(search));
+      (r.contactPerson && r.contactPerson.toLowerCase().includes(search)) ||
+      (r.jointNumber && r.jointNumber.toLowerCase().includes(search)) ||
+      (r.welderId && r.welderId.toLowerCase().includes(search));
     const matchesType = filters.types.has(r.controlType);
     return matchesSearch && matchesType;
   });
@@ -186,12 +195,12 @@ function renderList(requests, filters, activeId) {
     el.requestsList.innerHTML = filtered.map((r) => buildCardHtml(r, r.id === activeId)).join('');
   }
 
-  updateCounters(requests);
+  updateCounters(requests, isGuest);
   return filtered;
 }
 
 /** Обновляет счетчики заявок в боксе фильтров (только активные/в работе/брак) */
-function updateCounters(requests) {
+function updateCounters(requests, isGuest) {
   const activeRequests = requests.filter(r => r.approved !== true);
   if (el.statTotal) el.statTotal.textContent = activeRequests.length;
   if (el.cntVik) el.cntVik.textContent = activeRequests.filter((r) => r.controlType === 'Вик').length;
@@ -272,9 +281,13 @@ function getFilters() {
   if (el.filterBox) {
     el.filterBox.querySelectorAll('input[type="checkbox"]:checked').forEach((cb) => types.add(cb.value));
   }
+  const role = sessionStorage.getItem('weld_user_role');
+  const username = (localStorage.getItem('weld_username') || '').toLowerCase().trim();
+  const isGuest = role === 'guest' || (role !== 'admin' && role !== 'user' && username !== 'admin');
   return {
     search: el.searchInput ? el.searchInput.value : '',
     types: types,
+    isGuest: isGuest
   };
 }
 
