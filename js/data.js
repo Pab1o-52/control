@@ -51,27 +51,50 @@ async function loadFromFirebase() {
   try {
     const q = query(requestsCollection, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
-    const requests = [];
+    const rawRequests = [];
     snapshot.forEach((doc) => {
-      requests.push({ id: doc.id, ...doc.data() });
+      rawRequests.push({ id: doc.id, ...doc.data() });
     });
-    saveAll(requests);
-    return requests;
+
+    // Упорядочиваем по времени создания для вычисления сквозного номера
+    const sorted = [...rawRequests].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    sorted.forEach((req, idx) => {
+      req.requestNumber = req.requestNumber || (idx + 1);
+    });
+
+    saveAll(rawRequests);
+    return rawRequests;
   } catch (err) {
     console.error('[Firebase] Ошибка загрузки:', err);
     return [];
   }
 }
 
-/** Создаёт заявку в Firebase (БЕЗ КООРДИНАТ) */
+/** Создаёт заявку в Firebase (со сквозным номером) */
 async function createInFirebase(data) {
   try {
-    const docRef = await addDoc(requestsCollection, {
+    const existing = getAll();
+    // Определяем следующий порядковый сквозной номер
+    let maxNumber = 0;
+    existing.forEach((r) => {
+      if (r.requestNumber && typeof r.requestNumber === 'number' && r.requestNumber > maxNumber) {
+        maxNumber = r.requestNumber;
+      }
+    });
+    if (maxNumber === 0 && existing.length > 0) {
+      maxNumber = existing.length;
+    }
+    const nextNumber = maxNumber + 1;
+
+    const docPayload = {
       ...data,
+      requestNumber: nextNumber,
       createdAt: data.createdAt || new Date().toISOString(),
       approved: data.approved !== undefined ? data.approved : null
-    });
-    const newRequest = { id: docRef.id, ...data };
+    };
+
+    const docRef = await addDoc(requestsCollection, docPayload);
+    const newRequest = { id: docRef.id, ...docPayload };
     const requests = getAll();
     requests.push(newRequest);
     saveAll(requests);
@@ -118,12 +141,18 @@ async function removeFromFirebase(id) {
 function subscribeToFirebase(callback) {
   const q = query(requestsCollection, orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const requests = [];
+    const rawRequests = [];
     snapshot.forEach((doc) => {
-      requests.push({ id: doc.id, ...doc.data() });
+      rawRequests.push({ id: doc.id, ...doc.data() });
     });
-    saveAll(requests);
-    if (callback) callback(requests);
+
+    const sorted = [...rawRequests].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    sorted.forEach((req, idx) => {
+      req.requestNumber = req.requestNumber || (idx + 1);
+    });
+
+    saveAll(rawRequests);
+    if (callback) callback(rawRequests);
   }, (error) => {
     console.error('[Firebase] Ошибка подписки:', error);
   });

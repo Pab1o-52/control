@@ -330,8 +330,9 @@ const App = (() => {
         const tgSteel = newRequest.steelGrade ? `\n<b>Сталь:</b> ${newRequest.steelGrade}` : '';
         const tgAuthor = newRequest.author ? `\n<b>Автор:</b> ${newRequest.author}` : '';
 
+        const numTitle = newRequest.requestNumber ? `Заявка № ${newRequest.requestNumber}` : 'Новая заявка';
         sendTelegramMessage(
-          `📋 <b>Новая заявка на контроль!</b>\n` +
+          `📋 <b>${numTitle} на контроль!</b>\n` +
           `<b>Тип контроля:</b> ${newRequest.controlType || '-'}\n` +
           `<b>Объект:</b> ${newRequest.objectName || '-'}` +
           tgJoint + tgDims + tgSteel + tgWelder + tgAuthor
@@ -496,8 +497,9 @@ const App = (() => {
       }
       
       // Формируем CSV
-      const headers = ['ID', 'Объект', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Контролер', 'Автор', 'Дата'];
+      const headers = ['№ заявки', 'ID', 'Объект', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Контролер', 'Автор', 'Дата'];
       const rows = requests.map(r => [
+        r.requestNumber || '',
         r.id,
         `"${(r.objectName || '').replace(/"/g, '""')}"`,
         `"${(r.jointNumber || '').replace(/"/g, '""')}"`,

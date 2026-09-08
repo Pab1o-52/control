@@ -341,6 +341,31 @@ html, body {
 .request-card.type-Рк { border-left-color: var(--color-rk); }
 .request-card.type-Цд { border-left-color: var(--color-cd); }
 
+.rc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.rc-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.rc-badge-num {
+  font-family: 'Orbitron', monospace, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--neon-blue);
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
 .rc-top {
   display: flex;
   justify-content: space-between;
@@ -351,8 +376,9 @@ html, body {
   font-size: 12px;
   font-weight: 700;
   color: var(--text-main);
-  margin: 0 0 2px;
+  margin: 0;
   word-break: break-word;
+  flex: 1;
 }
 .rc-desc {
   font-size: 10px;

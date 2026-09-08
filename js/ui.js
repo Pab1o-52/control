@@ -148,11 +148,18 @@ function buildCardHtml(request, isActive, isGuest) {
     </button>
   `;
 
+  // Сквозной номер заявки
+  const reqNumText = request.requestNumber ? `Заявка № ${request.requestNumber}` : '';
+  const numBadgeHtml = reqNumText ? `<span class="rc-badge-num">${escapeHtml(reqNumText)}</span>` : '';
+
   return `
     <div class="request-card type-${escapeHtml(request.controlType)} ${isActive ? 'active' : ''} ${request.approved === true ? 'approved' : ''} ${request.approved === false ? 'rejected' : ''}" data-id="${request.id}">
       <div class="rc-header">
         <h3 class="rc-title">${escapeHtml(request.objectName)}</h3>
-        ${delHtml}
+        <div class="rc-header-right">
+          ${numBadgeHtml}
+          ${delHtml}
+        </div>
       </div>
       ${specInfoHtml}
       ${descHtml}
@@ -269,7 +276,8 @@ function fillForm(request) {
   if (el.fCreatedAt) el.fCreatedAt.value = formatDate(request.createdAt);
   if (el.fAuthor) el.fAuthor.value = request.author || '—';
 
-  el.formTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Редактирование';
+  const numLabel = request.requestNumber ? `Заявка № ${request.requestNumber}` : 'Редактирование';
+  el.formTitle.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ${escapeHtml(numLabel)}`;
   el.btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Сохранить</span>';
   el.btnCancelEdit.style.display = 'inline-flex';
 }
