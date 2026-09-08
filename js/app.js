@@ -241,7 +241,12 @@ const App = (() => {
     try {
       if (activeRequestId !== null && !isCreatingNew) {
         // Режим обновления
-        await updateInFirebase(activeRequestId, data);
+        const existing = getById(activeRequestId);
+        const patch = { ...data };
+        if (existing && existing.status) {
+          patch.status = existing.status;
+        }
+        await updateInFirebase(activeRequestId, patch);
         UI.showToast('Заявка обновлена', 'success');
         refreshList();
       } else {
@@ -249,9 +254,9 @@ const App = (() => {
         const newRequest = await createInFirebase({
           ...data,
           createdAt: new Date().toISOString(),
-          author: currentUser || 'Неизвестный автор',
+          author: currentUser || 'Гость',
           approved: null,
-          status: data.status || 'Новая'
+          status: 'Новая'
         });
         UI.showToast(`Заявка «${newRequest.objectName}» создана`, 'success');
 

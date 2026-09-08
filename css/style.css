@@ -899,14 +899,32 @@ select option { background: #12141f; color: var(--text-main); }
   }
 }
 
-/* Новые поля формы */
+/* Новые поля формы: 3 поля в одну строку (компактно на всех экранах) */
 .three-cols {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
-@media (max-width: 600px) {
-  .three-cols { grid-template-columns: 1fr; }
+.three-cols .form-group {
+  margin-bottom: 6px;
+  min-width: 0;
+}
+.three-cols label {
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  gap: 2px;
+}
+.three-cols label i {
+  font-size: 9px;
+  width: 10px;
+}
+.three-cols input {
+  padding: 4px 4px;
+  font-size: 11px;
+  text-align: center;
+  min-width: 0;
 }
 
 /* Информация о шве в карточке */
