@@ -19,6 +19,31 @@ import {
 
 import { UI } from './ui.js';
 
+// ===== TELEGRAM НАСТРОЙКИ =====
+const TELEGRAM_TOKEN = '8908251890:AAE4u9zm_3gyLiz4Ir3S9pnd27JbQpiPNRQ';
+const TELEGRAM_CHAT_ID = '7848540577';
+
+/**
+ * Отправляет текстовое уведомление в Telegram бот
+ */
+async function sendTelegramMessage(text) {
+  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch (err) {
+    console.error('[Telegram] Ошибка отправки уведомления:', err);
+  }
+}
+
 const App = (() => {
   let currentUser = null;
   let activeRequestId = null;
@@ -285,6 +310,20 @@ const App = (() => {
         isCreatingNew = false;
         UI.fillForm(newRequest);
         refreshList();
+
+        // Уведомление в Telegram о новой заявке
+        const tgJoint = newRequest.jointNumber ? `\n<b>Стык №:</b> ${newRequest.jointNumber}` : '';
+        const tgDims = (newRequest.diameter || newRequest.thickness) ? `\n<b>Размер:</b> Ø${newRequest.diameter || '-'}x${newRequest.thickness || '-'}` : '';
+        const tgWelder = newRequest.welderId ? `\n<b>Клеймо:</b> ${newRequest.welderId}` : '';
+        const tgSteel = newRequest.steelGrade ? `\n<b>Сталь:</b> ${newRequest.steelGrade}` : '';
+        const tgAuthor = newRequest.author ? `\n<b>Автор:</b> ${newRequest.author}` : '';
+
+        sendTelegramMessage(
+          `📋 <b>Новая заявка на контроль!</b>\n` +
+          `<b>Тип контроля:</b> ${newRequest.controlType || '-'}\n` +
+          `<b>Объект:</b> ${newRequest.objectName || '-'}` +
+          tgJoint + tgDims + tgSteel + tgWelder + tgAuthor
+        );
       }
     } catch (err) {
       console.error('[App] Ошибка сохранения заявки:', err);
@@ -372,6 +411,15 @@ const App = (() => {
           });
           refreshList();
           UI.showToast('❌ Заявка признана НЕ ГОДНОЙ', 'error');
+
+          const tgJoint = request.jointNumber ? ` (стык №${request.jointNumber})` : '';
+          sendTelegramMessage(
+            `❌ <b>Контроль НЕ пройден (БРАК)</b>\n` +
+            `<b>Объект:</b> ${request.objectName || '-'}${tgJoint}\n` +
+            `<b>Тип контроля:</b> ${request.controlType || '-'}\n` +
+            `<b>Дефект:</b> ${reason}\n` +
+            `<b>Контролёр:</b> ${inspector}`
+          );
         } catch (err) {
           UI.showToast('Ошибка при голосовании', 'error');
         }
@@ -380,14 +428,23 @@ const App = (() => {
       // Открываем модалку подтверждения годности с указанием контролёра
       UI.showApproveModal(request, inspector, async (confirmedInspector) => {
         try {
+          const finalInspector = confirmedInspector || inspector;
           await updateInFirebase(id, {
             approved: true,
             status: 'Завершена',
             defectReason: null,
-            approvedBy: confirmedInspector || inspector
+            approvedBy: finalInspector
           });
           refreshList();
-          UI.showToast(`✅ Заявка признана ГОДНОЙ (${confirmedInspector || inspector})`, 'success');
+          UI.showToast(`✅ Заявка признана ГОДНОЙ (${finalInspector})`, 'success');
+
+          const tgJoint = request.jointNumber ? ` (стык №${request.jointNumber})` : '';
+          sendTelegramMessage(
+            `✅ <b>Контроль пройден (ГОДЕН)</b>\n` +
+            `<b>Объект:</b> ${request.objectName || '-'}${tgJoint}\n` +
+            `<b>Тип контроля:</b> ${request.controlType || '-'}\n` +
+            `<b>Контролёр:</b> ${finalInspector}`
+          );
         } catch (err) {
           UI.showToast('Ошибка при голосовании', 'error');
         }
