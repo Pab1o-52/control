@@ -20,22 +20,19 @@ import {
 import { UI } from './ui.js';
 
 // ===== TELEGRAM НАСТРОЙКИ =====
-const TELEGRAM_TOKEN = '8908251890:AAE4u9zm_3gyLiz4Ir3S9pnd27JbQpiPNRQ';
+const TELEGRAM_PROXY_URL = 'https://telegram-bot-proxy.stk-lab7.workers.dev/';
 const TELEGRAM_CHAT_ID = '7848540577';
 
 /**
  * Отправляет текстовое уведомление в Telegram бот
- * Использует прокси-сервер для обхода блокировок
+ * Использует Cloudflare Worker прокси для обхода блокировок
  */
 async function sendTelegramMessage(text) {
-  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) return;
-
-  // Используем прокси через Cyclic (Cloudflare Workers)
-  const proxyUrl = `https://telegram-bot-api.cyclic.app/bot${TELEGRAM_TOKEN}/sendMessage`;
+  if (!TELEGRAM_PROXY_URL || !TELEGRAM_CHAT_ID) return;
 
   try {
-    console.log('[Telegram] Отправка через прокси...');
-    const response = await fetch(proxyUrl, {
+    console.log('[Telegram] Отправка через Cloudflare Worker...');
+    const response = await fetch(TELEGRAM_PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -52,7 +49,7 @@ async function sendTelegramMessage(text) {
     if (data.ok) {
       console.log('[Telegram] Уведомление отправлено успешно!');
     } else {
-      console.error('[Telegram] Ошибка отправки:', data.description || data);
+      console.error('[Telegram] Ошибка отправки:', data.description || data.error || data);
     }
   } catch (err) {
     console.error('[Telegram] Не удалось отправить уведомление:', err);
