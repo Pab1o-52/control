@@ -52,6 +52,11 @@ function cacheElements() {
   el.btnConfirmDelete = document.getElementById('btn-confirm-delete');
   el.btnCancelDelete = document.getElementById('btn-cancel-delete');
 
+  el.modalApprove = document.getElementById('modal-approve');
+  el.approveText = document.getElementById('approve-text');
+  el.btnConfirmApprove = document.getElementById('btn-confirm-approve');
+  el.btnCancelApprove = document.getElementById('btn-cancel-approve');
+
   el.modalReject = document.getElementById('modal-reject');
   el.inputDefectReason = document.getElementById('input-defect-reason');
   el.btnConfirmReject = document.getElementById('btn-confirm-reject');
@@ -333,6 +338,28 @@ function showConfirmDelete(request, onConfirm) {
   el.btnCancelDelete.addEventListener('click', closeModal);
 }
 
+function showApproveModal(request, onConfirm) {
+  const name = request.objectName || 'Заявка';
+  const joint = request.jointNumber ? ` (стык №${request.jointNumber})` : '';
+  if (el.approveText) {
+    el.approveText.innerHTML = `Признать годным: <b>${escapeHtml(name)}</b>${escapeHtml(joint)}?<br><span style="color:var(--text-dim);font-size:11px;">После подтверждения статус заявки будет «Завершена», а для гостей она перестанет отображаться.</span>`;
+  }
+  el.modalApprove.classList.add('show');
+
+  const handleConfirm = () => {
+    onConfirm();
+    closeModal();
+  };
+  const closeModal = () => {
+    el.modalApprove.classList.remove('show');
+    el.btnConfirmApprove.removeEventListener('click', handleConfirm);
+    el.btnCancelApprove.removeEventListener('click', closeModal);
+  };
+
+  el.btnConfirmApprove.addEventListener('click', handleConfirm);
+  el.btnCancelApprove.addEventListener('click', closeModal);
+}
+
 function showRejectModal(onConfirm) {
   el.inputDefectReason.value = '';
   el.modalReject.classList.add('show');
@@ -419,6 +446,7 @@ export const UI = {
   hideUserModal,
   setUserBadge,
   showConfirmDelete,
+  showApproveModal,
   showRejectModal,
   hideConfirmDelete,
   bindConfirmDeleteButtons,

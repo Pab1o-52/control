@@ -365,16 +365,19 @@ const App = (() => {
         }
       });
     } else {
-      // Сразу подтверждаем
-      updateInFirebase(id, {
-        approved: true,
-        status: 'Завершена',
-        defectReason: null
-      }).then(() => {
-        refreshList();
-        UI.showToast('✅ Заявка признана ГОДНОЙ', 'success');
-      }).catch(() => {
-        UI.showToast('Ошибка при голосовании', 'error');
+      // Открываем модалку подтверждения годности
+      UI.showApproveModal(request, async () => {
+        try {
+          await updateInFirebase(id, {
+            approved: true,
+            status: 'Завершена',
+            defectReason: null
+          });
+          refreshList();
+          UI.showToast('✅ Заявка признана ГОДНОЙ', 'success');
+        } catch (err) {
+          UI.showToast('Ошибка при голосовании', 'error');
+        }
       });
     }
   }
