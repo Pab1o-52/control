@@ -27,6 +27,7 @@ function cacheElements() {
   el.form = document.getElementById('request-form');
   el.formTitle = document.getElementById('form-title');
   el.fObjectName = document.getElementById('f-objectName');
+  el.fProjectName = document.getElementById('f-projectName');
   el.fLineNumber = document.getElementById('f-lineNumber');
   el.fControlType = document.getElementById('f-controlType');
   el.fJointNumber = document.getElementById('f-jointNumber');
@@ -121,14 +122,16 @@ function buildCardHtml(request, isActive, isGuest) {
   const contactHtml = request.contactPerson ? `<div class="rc-contact"><i class="fa-solid fa-id-card"></i> ${escapeHtml(request.contactPerson)}</div>` : '';
   
   // Новые поля
+  const projHtml = request.projectName ? `Проект: <b>${escapeHtml(request.projectName)}</b>` : '';
   const lineHtml = request.lineNumber ? `Линия: <b>${escapeHtml(request.lineNumber)}</b>` : '';
   const jointHtml = request.jointNumber ? `Стык: <b>${escapeHtml(request.jointNumber)}</b>` : '';
   const dimsHtml = (request.diameter || request.thickness) ? `Размер: <b>Ø${escapeHtml(request.diameter || '-')}x${escapeHtml(request.thickness || '-')}</b>` : '';
   const welderHtml = request.welderId ? `Клеймо: <b>${escapeHtml(request.welderId)}</b>` : '';
   
   let specInfoHtml = '';
-  if (lineHtml || jointHtml || dimsHtml || welderHtml) {
+  if (projHtml || lineHtml || jointHtml || dimsHtml || welderHtml) {
     specInfoHtml = `<div class="rc-spec-info">
+      ${projHtml ? `<span>${projHtml}</span>` : ''}
       ${lineHtml ? `<span>${lineHtml}</span>` : ''}
       ${jointHtml ? `<span>${jointHtml}</span>` : ''}
       ${dimsHtml ? `<span>${dimsHtml}</span>` : ''}
@@ -155,10 +158,15 @@ function buildCardHtml(request, isActive, isGuest) {
   const reqNumText = request.requestNumber ? `Заявка № ${request.requestNumber}` : '';
   const numBadgeHtml = reqNumText ? `<span class="rc-badge-num">${escapeHtml(reqNumText)}</span>` : '';
 
+  const titleParts = [request.objectName];
+  if (request.projectName) titleParts.push(request.projectName);
+  if (request.lineNumber) titleParts.push(request.lineNumber);
+  const cardTitle = titleParts.filter(Boolean).map(escapeHtml).join(' · ');
+
   return `
     <div class="request-card type-${escapeHtml(request.controlType)} ${isActive ? 'active' : ''} ${request.approved === true ? 'approved' : ''} ${request.approved === false ? 'rejected' : ''}" data-id="${request.id}">
       <div class="rc-header">
-        <h3 class="rc-title">${escapeHtml(request.objectName)}${request.lineNumber ? ' · ' + escapeHtml(request.lineNumber) : ''}</h3>
+        <h3 class="rc-title">${cardTitle}</h3>
         <div class="rc-header-right">
           ${numBadgeHtml}
           ${delHtml}
@@ -196,6 +204,7 @@ function renderList(requests, filters, activeId) {
 
     const matchesSearch = !search || 
       (r.objectName && r.objectName.toLowerCase().includes(search)) || 
+      (r.projectName && r.projectName.toLowerCase().includes(search)) || 
       (r.lineNumber && r.lineNumber.toLowerCase().includes(search)) || 
       (r.description && r.description.toLowerCase().includes(search)) ||
       (r.contactPerson && r.contactPerson.toLowerCase().includes(search)) ||
@@ -251,6 +260,7 @@ function setFormReadOnly(isReadOnly) {
 function getFormData() {
   return {
     objectName: el.fObjectName.value.trim(),
+    projectName: el.fProjectName ? el.fProjectName.value.trim() : '',
     lineNumber: el.fLineNumber ? el.fLineNumber.value.trim() : '',
     controlType: el.fControlType.value,
     jointNumber: el.fJointNumber ? el.fJointNumber.value.trim() : '',
@@ -267,7 +277,7 @@ function getFormData() {
 /** Проверяет валидность формы */
 function validateForm(data) {
   if (!data.objectName) {
-    return { valid: false, message: 'Укажите «Установка, Проект/Акт»' };
+    return { valid: false, message: 'Укажите «Установка»' };
   }
   if (!data.controlType) {
     return { valid: false, message: 'Выберите тип контроля' };
@@ -278,6 +288,7 @@ function validateForm(data) {
 /** Заполняет форму данными заявки (при редактировании или просмотре) */
 function fillForm(request, canEdit = true) {
   el.fObjectName.value = request.objectName || '';
+  if (el.fProjectName) el.fProjectName.value = request.projectName || '';
   if (el.fLineNumber) el.fLineNumber.value = request.lineNumber || '';
   el.fControlType.value = request.controlType || 'Вик';
   if (el.fJointNumber) el.fJointNumber.value = request.jointNumber || request.jointId || '';
@@ -315,6 +326,7 @@ function resetForm(currentUser) {
   el.form.reset();
   el.fControlType.value = 'Вик';
 
+  if (el.fProjectName) el.fProjectName.value = '';
   if (el.fLineNumber) el.fLineNumber.value = '';
   if (el.fJointNumber) el.fJointNumber.value = '';
   if (el.fDiameter) el.fDiameter.value = '';

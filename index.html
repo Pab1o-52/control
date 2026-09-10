@@ -143,14 +143,18 @@
           </select>
         </div>
 
-        <div class="form-row">
-          <div class="form-group half">
-            <label for="f-objectName"><i class="fa-solid fa-industry"></i> Установка, Проект/Акт *</label>
-            <input type="text" id="f-objectName" required placeholder="Например: АВТ-6, проект №12">
+        <div class="form-row three-cols inputs-left">
+          <div class="form-group">
+            <label for="f-objectName"><i class="fa-solid fa-industry"></i> Установка *</label>
+            <input type="text" id="f-objectName" required placeholder="АВТ-6">
           </div>
-          <div class="form-group half">
+          <div class="form-group">
+            <label for="f-projectName"><i class="fa-solid fa-folder-open"></i> Проект/Акт</label>
+            <input type="text" id="f-projectName" placeholder="№ 12">
+          </div>
+          <div class="form-group">
             <label for="f-lineNumber"><i class="fa-solid fa-route"></i> № Линии</label>
-            <input type="text" id="f-lineNumber" placeholder="Линия 1">
+            <input type="text" id="f-lineNumber" placeholder="Л-1">
           </div>
         </div>
 
@@ -268,6 +272,6 @@
 <div id="toast-container"></div>
 
 <!-- Модули приложения -->
-<script type="module" src="js/app.js?v=103"></script>
+<script type="module" src="js/app.js?v=104"></script>
 </body>
 </html>

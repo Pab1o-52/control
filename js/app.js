@@ -61,11 +61,28 @@ const App = (() => {
   let activeRequestId = null;
   let isCreatingNew = false;
 
+  /** В мобильной версии страница открывается со свернутым окном "Заявки на контроль" */
+  function checkMobileInitialState() {
+    if (window.innerWidth <= 768) {
+      const panelList = document.getElementById('panel-list');
+      if (panelList && !panelList.classList.contains('collapsed')) {
+        panelList.classList.add('collapsed');
+        const icon = document.querySelector('#panel-toggle i');
+        if (icon) {
+          icon.className = 'fa-solid fa-chevron-down';
+        }
+      }
+    }
+  }
+
   /** Точка входа приложения */
   async function init() {
     UI.cacheElements();
     bindUIEvents();
     UI.bindConfirmDeleteButtons();
+
+    // Проверка мобильного состояния по умолчанию
+    checkMobileInitialState();
 
     // Загрузка данных из Firebase
     try {
@@ -96,6 +113,7 @@ const App = (() => {
       UI.setUserBadge(username);
       document.getElementById('modal-login').classList.remove('show');
       document.getElementById('app').style.display = 'flex';
+      checkMobileInitialState();
       refreshAll();
       return;
     }
@@ -202,6 +220,7 @@ const App = (() => {
     UI.setUserBadge(guestName);
     document.getElementById('modal-login').classList.remove('show');
     document.getElementById('app').style.display = 'flex';
+    checkMobileInitialState();
     UI.showToast(`Вы вошли как ${guestName}`, 'info');
     refreshAll();
   }
@@ -226,6 +245,7 @@ const App = (() => {
       UI.setUserBadge(login);
       document.getElementById('modal-login').classList.remove('show');
       document.getElementById('app').style.display = 'flex';
+      checkMobileInitialState();
       UI.showToast(`Добро пожаловать, ${login}!`, 'success');
       refreshAll();
     } else {
@@ -338,6 +358,7 @@ const App = (() => {
         refreshList();
 
         // Уведомление в Telegram о новой заявке
+        const tgProj = newRequest.projectName ? `\n<b>Проект/Акт:</b> ${newRequest.projectName}` : '';
         const tgLine = newRequest.lineNumber ? `\n<b>№ Линии:</b> ${newRequest.lineNumber}` : '';
         const tgJoint = newRequest.jointNumber ? `\n<b>Стык №:</b> ${newRequest.jointNumber}` : '';
         const tgDims = (newRequest.diameter || newRequest.thickness) ? `\n<b>Размер:</b> Ø${newRequest.diameter || '-'}x${newRequest.thickness || '-'}` : '';
@@ -349,8 +370,8 @@ const App = (() => {
         sendTelegramMessage(
           `📋 <b>${numTitle} на контроль!</b>\n` +
           `<b>Тип контроля:</b> ${newRequest.controlType || '-'}\n` +
-          `<b>Объект:</b> ${newRequest.objectName || '-'}` +
-          tgLine + tgJoint + tgDims + tgSteel + tgWelder + tgAuthor
+          `<b>Установка:</b> ${newRequest.objectName || '-'}` +
+          tgProj + tgLine + tgJoint + tgDims + tgSteel + tgWelder + tgAuthor
         );
       }
     } catch (err) {
@@ -520,11 +541,12 @@ const App = (() => {
       }
       
       // Формируем CSV
-      const headers = ['№ заявки', 'ID', 'Объект', '№ Линии', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Контролер', 'Автор', 'Дата'];
+      const headers = ['№ заявки', 'ID', 'Установка', 'Проект/Акт', '№ Линии', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Контролер', 'Автор', 'Дата'];
       const rows = requests.map(r => [
         r.requestNumber || '',
         r.id,
         `"${(r.objectName || '').replace(/"/g, '""')}"`,
+        `"${(r.projectName || '').replace(/"/g, '""')}"`,
         `"${(r.lineNumber || '').replace(/"/g, '""')}"`,
         `"${(r.jointNumber || '').replace(/"/g, '""')}"`,
         r.diameter || '',

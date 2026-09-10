@@ -702,9 +702,6 @@ select option { background: #12141f; color: var(--text-main); }
 .panel-list.collapsed .filter-box {
   display: none !important;
 }
-.panel-list.collapsed .panel-toggle i {
-  transform: rotate(180deg);
-}
 .panel-list.collapsed {
   flex: 0 0 auto !important;
   min-height: 60px !important;
@@ -713,9 +710,6 @@ select option { background: #12141f; color: var(--text-main); }
 /* ===== Свёрнутая форма ===== */
 .panel-form.collapsed #request-form {
   display: none !important;
-}
-.panel-form.collapsed .panel-toggle i {
-  transform: rotate(180deg);
 }
 .panel-form.collapsed {
   flex: 0 0 auto !important;
@@ -802,16 +796,26 @@ select option { background: #12141f; color: var(--text-main); }
     max-height: none !important;
   }
 
-  /* Когда список свернут — форма не меняется */
+  /* Когда список свернут — форма разворачивается */
   .panel-list.collapsed {
-    flex: 0 0 75px !important;
-    min-height: 75px !important;
-    max-height: 75px !important;
+    flex: 0 0 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    overflow: hidden !important;
+  }
+  .panel-list.collapsed .panel-header {
+    padding: 8px 10px !important;
+    border-bottom: none !important;
+  }
+  .panel-list.collapsed .type-counters,
+  .panel-list.collapsed .filter-box,
+  .panel-list.collapsed .requests-list {
+    display: none !important;
   }
   .panel-list.collapsed + .panel-form {
-    flex: 0 0 auto !important;
-    min-height: 200px !important;
-    max-height: 50vh !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
   }
 
   .panel-header {
@@ -945,6 +949,15 @@ select option { background: #12141f; color: var(--text-main); }
   .panel-form.collapsed + .panel-list {
     min-height: 50vh !important;
   }
+  .panel-list.collapsed {
+    flex: 0 0 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+  }
+  .panel-list.collapsed + .panel-form {
+    min-height: 0 !important;
+    max-height: none !important;
+  }
 }
 
 /* Новые поля формы: 3 поля в одну строку (компактно на всех экранах) */
@@ -973,6 +986,10 @@ select option { background: #12141f; color: var(--text-main); }
   font-size: 11px;
   text-align: center;
   min-width: 0;
+}
+.three-cols.inputs-left input {
+  text-align: left;
+  padding: 4px 6px;
 }
 
 /* Информация о шве в карточке */
