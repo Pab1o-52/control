@@ -257,6 +257,16 @@ const App = (() => {
     return name !== 'admin';
   }
 
+  /** Проверяет, может ли текущий пользователь редактировать данную заявку */
+  function canUserEditRequest(request) {
+    if (!request) return false;
+    if (!isGuestUser()) return true; // Администраторы и обычные пользователи могут редактировать
+    const author = (request.author || '').trim().toLowerCase();
+    const current = (currentUser || getUsername() || '').trim().toLowerCase();
+    // Гость может редактировать только свою собственную заявку
+    return Boolean(author && current && author === current);
+  }
+
   /** Перерисовывает список заявок */
   function refreshList() {
     const requests = getAll();
@@ -300,6 +310,10 @@ const App = (() => {
       if (activeRequestId !== null && !isCreatingNew) {
         // Режим обновления
         const existing = getById(activeRequestId);
+        if (!canUserEditRequest(existing)) {
+          UI.showToast('Гости не могут изменять чужие заявки', 'error');
+          return;
+        }
         const patch = { ...data };
         if (existing && existing.status) {
           patch.status = existing.status;
@@ -320,10 +334,11 @@ const App = (() => {
 
         activeRequestId = newRequest.id;
         isCreatingNew = false;
-        UI.fillForm(newRequest);
+        UI.fillForm(newRequest, true);
         refreshList();
 
         // Уведомление в Telegram о новой заявке
+        const tgLine = newRequest.lineNumber ? `\n<b>№ Линии:</b> ${newRequest.lineNumber}` : '';
         const tgJoint = newRequest.jointNumber ? `\n<b>Стык №:</b> ${newRequest.jointNumber}` : '';
         const tgDims = (newRequest.diameter || newRequest.thickness) ? `\n<b>Размер:</b> Ø${newRequest.diameter || '-'}x${newRequest.thickness || '-'}` : '';
         const tgWelder = newRequest.welderId ? `\n<b>Клеймо:</b> ${newRequest.welderId}` : '';
@@ -335,7 +350,7 @@ const App = (() => {
           `📋 <b>${numTitle} на контроль!</b>\n` +
           `<b>Тип контроля:</b> ${newRequest.controlType || '-'}\n` +
           `<b>Объект:</b> ${newRequest.objectName || '-'}` +
-          tgJoint + tgDims + tgSteel + tgWelder + tgAuthor
+          tgLine + tgJoint + tgDims + tgSteel + tgWelder + tgAuthor
         );
       }
     } catch (err) {
@@ -359,8 +374,12 @@ const App = (() => {
     }
     activeRequestId = id;
     isCreatingNew = false;
-    UI.fillForm(request);
+    const canEdit = canUserEditRequest(request);
+    UI.fillForm(request, canEdit);
     UI.highlightCard(id);
+    if (!canEdit) {
+      UI.showToast('Чужая заявка — только для чтения', 'info');
+    }
   }
 
   // ==========================================================================
@@ -467,6 +486,10 @@ const App = (() => {
 
   /** Выполняет удаление заявки */
   async function handleDeleteRequest(id) {
+    if (isGuestUser()) {
+      UI.showToast('Гости не могут удалять заявки', 'error');
+      return;
+    }
     try {
       await removeFromFirebase(id);
       if (activeRequestId === id) {
@@ -497,11 +520,12 @@ const App = (() => {
       }
       
       // Формируем CSV
-      const headers = ['№ заявки', 'ID', 'Объект', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Контролер', 'Автор', 'Дата'];
+      const headers = ['№ заявки', 'ID', 'Объект', '№ Линии', '№ стыка', 'Диаметр', 'Толщина', 'Марка стали', 'Клеймо', 'Тип контроля', 'Статус', 'Годен', 'Дефект', 'Контролер', 'Автор', 'Дата'];
       const rows = requests.map(r => [
         r.requestNumber || '',
         r.id,
         `"${(r.objectName || '').replace(/"/g, '""')}"`,
+        `"${(r.lineNumber || '').replace(/"/g, '""')}"`,
         `"${(r.jointNumber || '').replace(/"/g, '""')}"`,
         r.diameter || '',
         r.thickness || '',

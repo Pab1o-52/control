@@ -27,6 +27,7 @@ function cacheElements() {
   el.form = document.getElementById('request-form');
   el.formTitle = document.getElementById('form-title');
   el.fObjectName = document.getElementById('f-objectName');
+  el.fLineNumber = document.getElementById('f-lineNumber');
   el.fControlType = document.getElementById('f-controlType');
   el.fJointNumber = document.getElementById('f-jointNumber');
   el.fDiameter = document.getElementById('f-diameter');
@@ -120,13 +121,15 @@ function buildCardHtml(request, isActive, isGuest) {
   const contactHtml = request.contactPerson ? `<div class="rc-contact"><i class="fa-solid fa-id-card"></i> ${escapeHtml(request.contactPerson)}</div>` : '';
   
   // Новые поля
+  const lineHtml = request.lineNumber ? `Линия: <b>${escapeHtml(request.lineNumber)}</b>` : '';
   const jointHtml = request.jointNumber ? `Стык: <b>${escapeHtml(request.jointNumber)}</b>` : '';
   const dimsHtml = (request.diameter || request.thickness) ? `Размер: <b>Ø${escapeHtml(request.diameter || '-')}x${escapeHtml(request.thickness || '-')}</b>` : '';
   const welderHtml = request.welderId ? `Клеймо: <b>${escapeHtml(request.welderId)}</b>` : '';
   
   let specInfoHtml = '';
-  if (jointHtml || dimsHtml || welderHtml) {
+  if (lineHtml || jointHtml || dimsHtml || welderHtml) {
     specInfoHtml = `<div class="rc-spec-info">
+      ${lineHtml ? `<span>${lineHtml}</span>` : ''}
       ${jointHtml ? `<span>${jointHtml}</span>` : ''}
       ${dimsHtml ? `<span>${dimsHtml}</span>` : ''}
       ${welderHtml ? `<span>${welderHtml}</span>` : ''}
@@ -155,7 +158,7 @@ function buildCardHtml(request, isActive, isGuest) {
   return `
     <div class="request-card type-${escapeHtml(request.controlType)} ${isActive ? 'active' : ''} ${request.approved === true ? 'approved' : ''} ${request.approved === false ? 'rejected' : ''}" data-id="${request.id}">
       <div class="rc-header">
-        <h3 class="rc-title">${escapeHtml(request.objectName)}</h3>
+        <h3 class="rc-title">${escapeHtml(request.objectName)}${request.lineNumber ? ' · ' + escapeHtml(request.lineNumber) : ''}</h3>
         <div class="rc-header-right">
           ${numBadgeHtml}
           ${delHtml}
@@ -193,6 +196,7 @@ function renderList(requests, filters, activeId) {
 
     const matchesSearch = !search || 
       (r.objectName && r.objectName.toLowerCase().includes(search)) || 
+      (r.lineNumber && r.lineNumber.toLowerCase().includes(search)) || 
       (r.description && r.description.toLowerCase().includes(search)) ||
       (r.contactPerson && r.contactPerson.toLowerCase().includes(search)) ||
       (r.jointNumber && r.jointNumber.toLowerCase().includes(search)) ||
@@ -234,10 +238,20 @@ function updateCounters(requests, isGuest) {
   if (el.cntCd) el.cntCd.textContent = activeRequests.filter((r) => r.controlType === 'Цд').length;
 }
 
+/** Включает/выключает режим "только чтение" для полей формы */
+function setFormReadOnly(isReadOnly) {
+  if (!el.form) return;
+  const inputs = el.form.querySelectorAll('input, select, textarea');
+  inputs.forEach((input) => {
+    input.disabled = isReadOnly;
+  });
+}
+
 /** Собирает текущие значения формы в объект */
 function getFormData() {
   return {
     objectName: el.fObjectName.value.trim(),
+    lineNumber: el.fLineNumber ? el.fLineNumber.value.trim() : '',
     controlType: el.fControlType.value,
     jointNumber: el.fJointNumber ? el.fJointNumber.value.trim() : '',
     diameter: el.fDiameter ? el.fDiameter.value.trim() : '',
@@ -261,9 +275,10 @@ function validateForm(data) {
   return { valid: true };
 }
 
-/** Заполняет форму данными заявки (при редактировании) */
-function fillForm(request) {
+/** Заполняет форму данными заявки (при редактировании или просмотре) */
+function fillForm(request, canEdit = true) {
   el.fObjectName.value = request.objectName || '';
+  if (el.fLineNumber) el.fLineNumber.value = request.lineNumber || '';
   el.fControlType.value = request.controlType || 'Вик';
   if (el.fJointNumber) el.fJointNumber.value = request.jointNumber || request.jointId || '';
   if (el.fDiameter) el.fDiameter.value = request.diameter || '';
@@ -277,27 +292,45 @@ function fillForm(request) {
   if (el.fAuthor) el.fAuthor.value = request.author || '—';
 
   const numLabel = request.requestNumber ? `Заявка № ${request.requestNumber}` : 'Редактирование';
-  el.formTitle.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ${escapeHtml(numLabel)}`;
-  el.btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Сохранить</span>';
-  el.btnCancelEdit.style.display = 'inline-flex';
+  
+  if (!canEdit) {
+    setFormReadOnly(true);
+    el.formTitle.innerHTML = `<i class="fa-solid fa-eye"></i> ${escapeHtml(numLabel)} <span class="badge-readonly">только просмотр</span>`;
+    el.btnSubmit.style.display = 'none';
+    el.btnCancelEdit.style.display = 'inline-flex';
+    el.btnCancelEdit.innerHTML = '<i class="fa-solid fa-xmark"></i> Закрыть';
+  } else {
+    setFormReadOnly(false);
+    el.formTitle.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ${escapeHtml(numLabel)}`;
+    el.btnSubmit.style.display = 'inline-flex';
+    el.btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Сохранить</span>';
+    el.btnCancelEdit.style.display = 'inline-flex';
+    el.btnCancelEdit.innerHTML = '<i class="fa-solid fa-xmark"></i> Отмена';
+  }
 }
 
 /** Сбрасывает форму в начальное состояние */
 function resetForm(currentUser) {
+  setFormReadOnly(false);
   el.form.reset();
   el.fControlType.value = 'Вик';
 
+  if (el.fLineNumber) el.fLineNumber.value = '';
   if (el.fJointNumber) el.fJointNumber.value = '';
   if (el.fDiameter) el.fDiameter.value = '';
   if (el.fThickness) el.fThickness.value = '';
   if (el.fSteelGrade) el.fSteelGrade.value = '';
   if (el.fWelderId) el.fWelderId.value = '';
+  if (el.fDescription) el.fDescription.value = '';
+  if (el.fContactPerson) el.fContactPerson.value = '';
   if (el.fStatus) el.fStatus.value = 'Новая';
   if (el.fCreatedAt) el.fCreatedAt.value = '—';
   if (el.fAuthor) el.fAuthor.value = currentUser || '—';
 
   el.formTitle.innerHTML = '<i class="fa-solid fa-file-pen"></i> Новая заявка';
+  el.btnSubmit.style.display = 'inline-flex';
   el.btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Создать</span>';
+  el.btnCancelEdit.innerHTML = '<i class="fa-solid fa-xmark"></i> Отмена';
   el.btnCancelEdit.style.display = 'none';
 }
 
@@ -468,6 +501,7 @@ export const UI = {
   validateForm,
   fillForm,
   resetForm,
+  setFormReadOnly,
   getFilters,
   highlightCard,
   showUserModal,
