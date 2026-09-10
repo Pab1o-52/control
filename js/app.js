@@ -465,10 +465,15 @@ const App = (() => {
           refreshList();
           UI.showToast('❌ Заявка признана НЕ ГОДНОЙ', 'error');
 
-          const tgJoint = request.jointNumber ? ` (стык №${request.jointNumber})` : '';
+          const numTitle = request.requestNumber ? `Заявка № ${request.requestNumber}` : 'Заявка';
+          const tgLine = request.lineNumber ? `\n<b>№ Линии:</b> ${request.lineNumber}` : '';
+          const tgJoint = request.jointNumber ? `\n<b>Стык №:</b> ${request.jointNumber}` : '';
+          const tgProj = request.projectName ? ` (${request.projectName})` : '';
+
           sendTelegramMessage(
-            `❌ <b>Контроль НЕ пройден (БРАК)</b>\n` +
-            `<b>Объект:</b> ${request.objectName || '-'}${tgJoint}\n` +
+            `❌ <b>${numTitle} — Контроль НЕ пройден (БРАК)</b>\n` +
+            `<b>Установка:</b> ${request.objectName || '-'}${tgProj}` +
+            tgLine + tgJoint + `\n` +
             `<b>Тип контроля:</b> ${request.controlType || '-'}\n` +
             `<b>Дефект:</b> ${reason}\n` +
             `<b>Контролёр:</b> ${inspector}`
@@ -491,10 +496,15 @@ const App = (() => {
           refreshList();
           UI.showToast(`✅ Заявка признана ГОДНОЙ (${finalInspector})`, 'success');
 
-          const tgJoint = request.jointNumber ? ` (стык №${request.jointNumber})` : '';
+          const numTitle = request.requestNumber ? `Заявка № ${request.requestNumber}` : 'Заявка';
+          const tgLine = request.lineNumber ? `\n<b>№ Линии:</b> ${request.lineNumber}` : '';
+          const tgJoint = request.jointNumber ? `\n<b>Стык №:</b> ${request.jointNumber}` : '';
+          const tgProj = request.projectName ? ` (${request.projectName})` : '';
+
           sendTelegramMessage(
-            `✅ <b>Контроль пройден (ГОДЕН)</b>\n` +
-            `<b>Объект:</b> ${request.objectName || '-'}${tgJoint}\n` +
+            `✅ <b>${numTitle} — Контроль пройден (ГОДЕН)</b>\n` +
+            `<b>Установка:</b> ${request.objectName || '-'}${tgProj}` +
+            tgLine + tgJoint + `\n` +
             `<b>Тип контроля:</b> ${request.controlType || '-'}\n` +
             `<b>Контролёр:</b> ${finalInspector}`
           );
