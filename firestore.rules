@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Правила для коллекции заявок на сварочный контроль
+    match /requests/{requestId} {
+      allow read: if true;
+      // Защита от создания пустых или некорректных записей
+      allow create: if request.resource.data.objectName is string 
+                    && request.resource.data.controlType is string;
+      allow update: if true;
+      allow delete: if true;
+    }
+    
+    // Правила для коллекции пользователей
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+  }
+}
